@@ -10,7 +10,7 @@ STATE = config.get('withings_api_example', 'state')
 ACCOUNT_URL = config.get('withings_api_example', 'account_withings_url')
 WBSAPI_URL = config.get('withings_api_example', 'wbsapi_withings_url')
 CALLBACK_URI = config.get('withings_api_example', 'callback_uri')
-
+#https://asia-southeast2-eric-han.cloudfunctions.net
 
 @app.route("/")
 def get_code():
@@ -22,9 +22,8 @@ def get_code():
     payload = {'response_type': 'code',  # imposed string by the api
                'client_id': CLIENT_ID,
                'state': STATE,
-               'scope': 'user.info',  # see docs for enhanced scope
-               'redirect_uri': CALLBACK_URI,  # URL of this app
-               'mode': 'demo'  # Use demo mode, DELETE THIS FOR REAL APP
+               'scope': 'user.metrics',  # see docs for enhanced scope
+               'redirect_uri': CALLBACK_URI  # URL of this app
                }
 
     r_auth = requests.get(f'{ACCOUNT_URL}/oauth2_user/authorize2',
@@ -55,6 +54,20 @@ def get_token():
                             data=payload).json()
 
     access_token = r_token.get('access_token', '')
+    refresh_token = r_token.get('refresh_token', '')
+
+    payload = {'action': 'requesttoken',
+	'grant_type': 'refresh_token',
+	'client_id' : CLIENT_ID,
+	'client_secret': CUSTOMER_SECRET,
+	'refresh_token': refresh_token}
+    r_refresh_token = requests.get(f'{WBSAPI_URL}/v2/oauth2',
+                            params=payload).json()
+    access_token = r_refresh_token.get('access_token', '')
+    print(r_refresh_token)
+    print(r_refresh_token['body']['access_token'])
+    
+    access_token = r_refresh_token['body']['access_token']
 
     # GET Some info with this token
     headers = {'Authorization': 'Bearer ' + access_token}
@@ -65,4 +78,12 @@ def get_token():
                                headers=headers,
                                params=payload).json()
 
-    return r_getdevice
+    payload = {
+        'action': 'getmeas', 
+        'meastype': 71,
+        }
+    user_temp = requests.get(f'{WBSAPI_URL}/measure',
+                               headers=headers,
+                               params=payload).json()
+
+    return user_temp
