@@ -2,6 +2,8 @@ from flask import Flask, request, redirect
 import requests
 from withings_api_example import config
 
+from temperature import readTemperature, readUsernamePassword, login, readIsCheck, getTemperature, submitTemperature, parseTemperatureTable, printData
+
 app = Flask(__name__)
 
 CLIENT_ID = config.get('withings_api_example', 'client_id')
@@ -85,5 +87,34 @@ def get_token():
     user_temp = requests.get(f'{WBSAPI_URL}/measure',
                                headers=headers,
                                params=payload).json()
+
+    latest_measurement = user_temp["body"]["measuregrps"][0]["measures"][0]
+    
+    val = latest_measurement["value"]
+    unit = latest_measurement["unit"]
+    latest_temp = val*10**unit
+
+    try:
+        temperature = latest_temp
+    except Exception as e:
+        print('Please provide your temperature as an argument.')
+        exit()
+
+    username, password = readUsernamePassword()
+    try:
+        jsessionID = login(username, password)
+    except Exception as e:
+        print('Your login credentials are invalid.')
+        exit()
+
+    isCheck = readIsCheck()
+    if isCheck:
+        tempResponseText = getTemperature(jsessionID)
+    else:
+        tempResponseText = submitTemperature(jsessionID, temperature)
+        print('Submitted temperature of %s°C' % temperature)
+
+    tempData = parseTemperatureTable(tempResponseText)
+    printData(tempData)
 
     return user_temp

@@ -6,7 +6,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser as ConfigParser
 
 config = ConfigParser()
-DEFAULT_CONFIG_FILES = []
+DEFAULT_CONFIG_FILES = ["project.conf"]
 
 LOCAL_CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(
