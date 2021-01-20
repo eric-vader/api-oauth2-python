@@ -14,6 +14,20 @@ WBSAPI_URL = config.get('withings_api_example', 'wbsapi_withings_url')
 CALLBACK_URI = config.get('withings_api_example', 'callback_uri')
 #https://asia-southeast2-eric-han.cloudfunctions.net
 
+@app.route("/register")
+def get_code():
+    payload = {'response_type': 'code',  # imposed string by the api
+               'client_id': CLIENT_ID,
+               'state': STATE,
+               'scope': 'user.metrics',  # see docs for enhanced scope
+               'redirect_uri': CALLBACK_URI  # URL of this app
+               }
+
+    r_auth = requests.get(f'{ACCOUNT_URL}/oauth2_user/authorize2',
+                          params=payload)
+
+    return redirect(r_auth.url)
+
 @app.route("/")
 def get_code():
     """
